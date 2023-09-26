@@ -10,6 +10,11 @@ Finally, there is an `$all` stream subscription, `TestSubscription`, and its
 associated `TestHandler`. The handler returns `EventHandlingStatus.Success` for each 
 message that it handles.
 
+##### Console app
+
+There is now also a console app, `NoAsp`, that is simpler (no DI) and exhibits 
+the same problem.
+
 ##### Test conditions
 * Operating system: Windows 10 Professional, version 22H2, build 19045.3448
 * Database (local): SQL Server Developer (64 bit), version 15.0.2101.7
