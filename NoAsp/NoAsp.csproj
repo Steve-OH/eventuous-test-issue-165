@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -8,8 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Eventuous" Version="0.14.0" />
-    <PackageReference Include="Eventuous.SqlServer" Version="0.14.0" />
+    <ProjectReference Include="..\..\EventuousBeta\eventuous\src\Core\src\Eventuous.Application\Eventuous.Application.csproj" />
+    <ProjectReference Include="..\..\EventuousBeta\eventuous\src\Core\src\Eventuous.Diagnostics\Eventuous.Diagnostics.csproj" />
+    <ProjectReference Include="..\..\EventuousBeta\eventuous\src\Core\src\Eventuous.Domain\Eventuous.Domain.csproj" />
+    <ProjectReference Include="..\..\EventuousBeta\eventuous\src\Core\src\Eventuous.Persistence\Eventuous.Persistence.csproj" />
+    <ProjectReference Include="..\..\EventuousBeta\eventuous\src\Core\src\Eventuous.Serialization\Eventuous.Serialization.csproj" />
+    <ProjectReference Include="..\..\EventuousBeta\eventuous\src\Core\src\Eventuous.Shared\Eventuous.Shared.csproj" />
+    <ProjectReference Include="..\..\EventuousBeta\eventuous\src\Core\src\Eventuous.Subscriptions\Eventuous.Subscriptions.csproj" />
+    <ProjectReference Include="..\..\EventuousBeta\eventuous\src\Core\src\Eventuous\Eventuous.csproj" />
+    <ProjectReference Include="..\..\EventuousBeta\eventuous\src\SqlServer\src\Eventuous.SqlServer\Eventuous.SqlServer.csproj" />
   </ItemGroup>
 
 </Project>

@@ -12,18 +12,21 @@ public class Program
 {
     public static string SchemaName => "TEST";
 
-    public static void Main()
+    public static async Task Main()
     {
-        using var connection = getConnection();
+        await using var connection = getConnection();
         connection.Open();
         connection.Close();
         TypeMap.RegisterKnownEventTypes();
         var schema = new Schema(SchemaName);
-        schema.CreateSchema(getConnection);
+        await schema.CreateSchema(getConnection);
 
         IEventStore eventStore = new SqlServerStore(getConnection, new SqlServerStoreOptions(SchemaName));
         var aggregateStore = new AggregateStore(eventStore);
-        var checkpointStore = new SqlServerCheckpointStore(getConnection, SchemaName);
+        var checkpointStore = new SqlServerCheckpointStore(getConnection, new SqlServerCheckpointStoreOptions
+        {
+            Schema = SchemaName
+        });
         var testCommandService = new TestCommandService(aggregateStore);
         var pipe = new ConsumePipe();
         pipe.AddDefaultConsumer(new TestHandler());
@@ -33,31 +36,31 @@ public class Program
                 Schema = SchemaName,
                 SubscriptionId = "TestSubscription"
             }, checkpointStore, pipe);
-        testSubscription.Subscribe((subscriptionId) =>
+        await testSubscription.Subscribe((subscriptionId) =>
         {
             Console.WriteLine($"{subscriptionId} started");
-        }, (subscriptionId, dropReason, e)=>
+        }, (subscriptionId, dropReason, e) =>
         {
             var suffix = e is not null ? $" with exception {e}" : "";
             Console.WriteLine($"{subscriptionId} dropped because {dropReason}{suffix}");
         }, CancellationToken.None);
 
-        var accounts = Enumerable.Range(0, 1000).Select(n => new TestAccount($"user{n:D4}")).ToList();
-        testCommandService.Handle(new InjectTestAccounts(accounts), CancellationToken.None);
+        var accounts = Enumerable.Range(0, 100000).Select(n => new TestAccount($"user{n:D4}")).ToList();
+        await testCommandService.Handle(new InjectTestAccounts(accounts), CancellationToken.None);
 
-        Task.Delay(2000).Wait();
-        Console.WriteLine("App will shut down momentarily...");
+        Console.WriteLine("Please wait for events to be handled, then press any key to exit...");
+        Console.ReadKey();
     }
 
     private static SqlConnection getConnection() =>
-        new SqlConnection("Data Source=MY_SERVER;Initial Catalog=MyDatabase;Integrated Security=true;Trust Server Certificate=true");
+        new("Data Source=MY_SERVER;Initial Catalog=MyDatabase;Integrated Security=true;Trust Server Certificate=true");
 }
 
 internal class TestCommandService : CommandService<TestAccounts, TestAccountsState, TestAccountsId>
 {
     public TestCommandService(IAggregateStore store) : base(store)
     {
-        OnAny<InjectTestAccounts>(_ => TestAccountsId.Instance, (accounts, cmd) =>
+        On<InjectTestAccounts>().InState(ExpectedState.Any).GetId(_ => TestAccountsId.Instance).Act((accounts, cmd) =>
         {
             accounts.InjectAccounts(cmd.Accounts);
         });
@@ -84,7 +87,7 @@ public class TestAccounts : Aggregate<TestAccountsState>
 
 public record TestAccountsState : State<TestAccountsState>;
 
-public record TestAccountsId() : AggregateId("$$Singleton$$")
+public record TestAccountsId() : Id("$$Singleton$$")
 {
     public static TestAccountsId Instance = new();
 }
@@ -96,7 +99,7 @@ public class TestHandler : IEventHandler
     public ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context)
     {
         count++;
-        if (count % 100 == 0)
+        if (count % 1000 == 0)
         {
             Console.WriteLine("{0}", $"Handled {count} events");
         }
